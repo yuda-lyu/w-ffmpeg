@@ -1,11 +1,10 @@
 {
   "name": "w-ffmpeg",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "main": "dist/w-ffmpeg.umd.js",
   "dependencies": {
-    "lodash-es": "^4.18.1",
-    "w-zip": "^1.0.25",
-    "wsemi": "^1.8.67"
+    "w-zip": "^1.0.26",
+    "wsemi": "^1.8.68"
   },
   "devDependencies": {
     "w-package-tools": "^1.1.12"
