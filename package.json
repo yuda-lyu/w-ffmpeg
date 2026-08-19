@@ -1,13 +1,13 @@
 {
   "name": "w-ffmpeg",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "main": "dist/w-ffmpeg.umd.js",
   "dependencies": {
-    "w-zip": "^1.0.31",
-    "wsemi": "^1.8.77"
+    "w-zip": "^1.0.32",
+    "wsemi": "^1.8.78"
   },
   "devDependencies": {
-    "w-package-tools": "^1.1.13"
+    "w-package-tools": "^1.1.14"
   },
   "scripts": {
     "postinstall": "node scripts/install.mjs",
