@@ -1,6 +1,6 @@
 {
   "name": "w-ffmpeg",
-  "version": "1.0.14",
+  "version": "1.0.15",
   "main": "dist/w-ffmpeg.umd.js",
   "dependencies": {
     "w-zip": "^1.0.36",

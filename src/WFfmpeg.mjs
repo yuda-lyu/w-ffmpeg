@@ -1,13 +1,9 @@
-import path from 'path'
 import process from 'process'
 import get from 'lodash-es/get.js'
 import isearr from 'wsemi/src/isearr.mjs'
 import isestr from 'wsemi/src/isestr.mjs'
 import execProcess from 'wsemi/src/execProcess.mjs'
-import fsIsFile from 'wsemi/src/fsIsFile.mjs'
-
-
-let fdSrv = path.resolve()
+import autoDownloadFiles from './autoDownloadFiles.mjs'
 
 
 function isWindows() {
@@ -19,6 +15,8 @@ function isWindows() {
  * 調用ffmpeg，傳入參數交由套件自帶的ffmpeg.exe執行，只能用於Windows作業系統
  *
  * ffmpeg.exe由安裝時(postinstall)自GitHub下載切割zip分片合併解壓而來，位於套件src/目錄
+ *
+ * 若因npm封鎖scripts致postinstall未執行，則於首次調用時自動重新下載
  *
  * ffmpeg: https://ffmpeg.org/
  *
@@ -66,27 +64,8 @@ async function WFfmpeg(args, opt = {}) {
         return Promise.reject('args is not an effective array or string')
     }
 
-    //fnExe
-    let fnExe = 'ffmpeg.exe'
-
-    //fdExe, 定位ffmpeg.exe (開發時於cwd的src/, 被安裝為相依套件時於node_modules/w-ffmpeg/src/)
-    let fdExe = ''
-    if (true) {
-        let fdExeSrc = `${fdSrv}/src/`
-        let fdExeNM = `${fdSrv}/node_modules/w-ffmpeg/src/`
-        if (fsIsFile(`${fdExeSrc}${fnExe}`)) {
-            fdExe = fdExeSrc
-        }
-        else if (fsIsFile(`${fdExeNM}${fnExe}`)) {
-            fdExe = fdExeNM
-        }
-        else {
-            return Promise.reject('can not find ffmpeg.exe, the postinstall download may have failed')
-        }
-    }
-
-    //fpExe
-    let fpExe = path.resolve(fdExe, fnExe)
+    //fpExe, 定位ffmpeg.exe, 若無檔案則自動下載, 取不到時autoDownloadFiles會reject錯誤訊息
+    let fpExe = await autoDownloadFiles()
 
     //opt for execProcess (未提供者交由execProcess採用預設)
     let cbStdout = get(opt, 'cbStdout')
