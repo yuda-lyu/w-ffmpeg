@@ -22,17 +22,17 @@ let pmDownload = null
  *
  * 因ffmpeg.exe只能用於Windows作業系統，故調用前須自行檢核作業系統
  *
- * @returns {Promise} 回傳Promise，resolve回傳ffmpeg.exe的絕對路徑字串，reject回傳錯誤訊息
+ * @returns {Promise} 回傳Promise，resolve回傳執行檔路徑物件，內含fpExe為ffmpeg.exe的絕對路徑字串，reject回傳錯誤訊息
  * @example
  * import autoDownloadFiles from 'w-ffmpeg/src/autoDownloadFiles.mjs'
  *
  * async function test() {
  *
  *     //autoDownloadFiles, 無ffmpeg.exe時自動下載, 下載失敗則reject
- *     let fpExeFfmpeg = await autoDownloadFiles()
+ *     let { fpExe } = await autoDownloadFiles()
  *
- *     console.log('fpExeFfmpeg', fpExeFfmpeg)
- *     // fpExeFfmpeg D:\xxx\node_modules\w-ffmpeg\src\ffmpeg.exe
+ *     console.log('fpExe', fpExe)
+ *     // fpExe D:\xxx\node_modules\w-ffmpeg\src\ffmpeg.exe
  * }
  * test()
  *     .catch((err) => {
@@ -91,7 +91,9 @@ async function autoDownloadFiles() {
     //fpExe
     let fpExe = path.resolve(fdBase, fnExe)
 
-    return fpExe
+    return {
+        fpExe,
+    }
 }
 
 

@@ -65,7 +65,7 @@ async function WFfmpeg(args, opt = {}) {
     }
 
     //fpExe, 定位ffmpeg.exe, 若無檔案則自動下載, 取不到時autoDownloadFiles會reject錯誤訊息
-    let fpExe = await autoDownloadFiles()
+    let { fpExe } = await autoDownloadFiles()
 
     //opt for execProcess (未提供者交由execProcess採用預設)
     let cbStdout = get(opt, 'cbStdout')
