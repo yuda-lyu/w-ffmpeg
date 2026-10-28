@@ -11,4 +11,5 @@ tmp
 src/ffmpeg.exe
 src/ffmpeg.zip
 src/temp
+/bin-cache/
 

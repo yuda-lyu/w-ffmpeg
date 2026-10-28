@@ -16,3 +16,12 @@ src/ffmpeg.zip.004
 src/ffmpeg.zip.005
 src/temp
 
+# 外部執行檔不入npm包, 只留bin/manifest.json(清單); 快取與測試暫存夾不入包(外部執行檔規格S1、S5)
+/bin/*
+!/bin/manifest.json
+/bin-cache/
+/test/_tmp/
+
+
+# 指引要求文件入 git 版控、不入 npm 包(2026-10-22)
+sgud

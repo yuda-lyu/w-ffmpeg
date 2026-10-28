@@ -1,0 +1,50 @@
+{
+  "schema": 1,
+  "pkg": "w-ffmpeg",
+  "mode": "pinned",
+  "repo": "yuda-lyu/w-ffmpeg",
+  "commit": "5b4a261bac98f2beaf1f18ae63b6e17ee96c8673",
+  "files": [
+    {
+      "name": "ffmpeg.exe",
+      "parts": [
+        {
+          "path": "bin/ffmpeg.zip.001",
+          "sha256": "03944f374633c02104b6e426f6e462f7a38c52e9d1e05308860c85ccf077b5a8",
+          "size": 26214400
+        },
+        {
+          "path": "bin/ffmpeg.zip.002",
+          "sha256": "666349e32ebe8e68bce70c1b1587b3385b56edfdac4ed122c7d01a4d5984dd64",
+          "size": 26214400
+        },
+        {
+          "path": "bin/ffmpeg.zip.003",
+          "sha256": "de4df75fbadee0f3bf52023a57e05eb32004d95b26b7e14a61b6bdc6b59702fc",
+          "size": 26214400
+        },
+        {
+          "path": "bin/ffmpeg.zip.004",
+          "sha256": "230ac4fd57c4b8e93cf453f349d1480843d2ebf1b78c54bccf9ff79206db11a0",
+          "size": 26214400
+        },
+        {
+          "path": "bin/ffmpeg.zip.005",
+          "sha256": "fbb8093ccef2ab9a45b7901aa0c947359af4ce74f7310e20dc9946f8fc388d36",
+          "size": 17830042
+        }
+      ],
+      "assembled": {
+        "type": "zip",
+        "sha256": "120475994a3750da1292f07bff0f16df5ade4b28f4a8295dd390d995d4249fc7",
+        "size": 122687642
+      },
+      "extract": {
+        "type": "zip",
+        "member": "ffmpeg.exe",
+        "sha256": "019209cd6ce65aad1263d73684dd15edae6bd02cdb25abebddfd1286de5f56cb",
+        "size": 122687488
+      }
+    }
+  ]
+}

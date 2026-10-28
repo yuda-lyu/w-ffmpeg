@@ -29,7 +29,7 @@
 <nav >
     
     
-    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#WFfmpeg">WFfmpeg</a></li><li><a href="global.html#autoDownloadFiles">autoDownloadFiles</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#WFfmpeg">WFfmpeg</a></li><li><a href="global.html#autoDownloadFiles">autoDownloadFiles</a></li><li><a href="global.html#ensureBins">ensureBins</a></li></ul>
     
 </nav>
 
@@ -141,15 +141,17 @@
     
     <dt class="tag-description">Description:</dt>
     <dd class="tag-description"><ul class="dummy"><li><p>調用ffmpeg，傳入參數交由套件自帶的ffmpeg.exe執行，只能用於Windows作業系統</p>
-<p>ffmpeg.exe由安裝時(postinstall)自GitHub下載切割zip分片合併解壓而來，位於套件src/目錄</p>
-<p>若因npm封鎖scripts致postinstall未執行，則於首次調用時自動重新下載</p>
+<p>ffmpeg.exe不含於npm包，首次調用時經ensureBins依bin/manifest.json自GitHub(釘選提交)下載切割zip分片，
+以SHA-256與大小校驗後組合、解壓並存於快取(預設為套件根之bin-cache/)，之後自快取取得(亦校驗)，安裝時不下載</p>
+<p>離線與內網之用法(環境變數W_BIN_CACHE、W_BIN_MIRROR、W_BIN_OFFLINE)見README〈外部執行檔〉，
+部署前可預先調用WFfmpeg.ensureBins()取得</p>
 <p>ffmpeg: https://ffmpeg.org/</p></li></ul></dd>
     
 
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="WFfmpeg.mjs.html">WFfmpeg.mjs</a>, <a href="WFfmpeg.mjs.html#line55">line 55</a>
+        <a href="WFfmpeg.mjs.html">WFfmpeg.mjs</a>, <a href="WFfmpeg.mjs.html#line61">line 61</a>
     </li></ul></dd>
     
 
@@ -574,7 +576,7 @@ test()
 
         
 <div class="param-desc">
-    <p>回傳Promise，resolve回傳成功訊息，reject回傳錯誤訊息</p>
+    <p>回傳Promise，resolve回傳成功訊息，reject回傳錯誤訊息(字串，取不到ffmpeg.exe時為<code>[錯誤碼] 說明</code>，錯誤碼如E_OFFLINE_MISSING、E_HASH_MISMATCH)</p>
 </div>
 
 
@@ -611,9 +613,9 @@ test()
 <dl class="details">
     
     <dt class="tag-description">Description:</dt>
-    <dd class="tag-description"><ul class="dummy"><li><p>自動定位ffmpeg.exe，若無檔案則自動下載，回傳ffmpeg.exe的絕對路徑</p>
-<p>依序偵測當前工作路徑的src/與node_modules/w-ffmpeg/src/，皆無ffmpeg.exe時，
-代表安裝時npm封鎖scripts致postinstall未執行，故自動調用downloadFiles重新下載</p>
+    <dd class="tag-description"><ul class="dummy"><li><p>取得ffmpeg.exe，回傳ffmpeg.exe的絕對路徑</p>
+<p>經ensureBins依bin/manifest.json之SHA-256與大小校驗後取得(快取、鏡像、GitHub釘選提交之切割zip分片)，首次使用才下載，安裝時不下載，
+離線與內網之用法(W_BIN_CACHE、W_BIN_MIRROR、W_BIN_OFFLINE)見README〈外部執行檔〉</p>
 <p>供w-ffmpeg自身與其他依賴w-ffmpeg的套件(例如w-dwload-dlp)調用，無須各自實作偵測與下載邏輯</p>
 <p>因ffmpeg.exe只能用於Windows作業系統，故調用前須自行檢核作業系統</p></li></ul></dd>
     
@@ -621,7 +623,137 @@ test()
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="autoDownloadFiles.mjs.html">autoDownloadFiles.mjs</a>, <a href="autoDownloadFiles.mjs.html#line43">line 43</a>
+        <a href="autoDownloadFiles.mjs.html">autoDownloadFiles.mjs</a>, <a href="autoDownloadFiles.mjs.html#line37">line 37</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <dt class="important tag-deprecated">Deprecated:</dt><dd><ul class="dummy"><li>改用ensureBins(w-ffmpeg/src/ensureBins.mjs，或主檔之WFfmpeg.ensureBins)，本函數保留供舊有深層匯入者相容</li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-examples">Example</h5>
+    
+    <pre class="prettyprint"><code>import autoDownloadFiles from 'w-ffmpeg/src/autoDownloadFiles.mjs'
+
+async function test() {
+
+    //autoDownloadFiles, 無快取時自動取得, 取得或校驗失敗則reject
+    let { fpExe } = await autoDownloadFiles()
+
+    console.log('fpExe', fpExe)
+    // fpExe D:\xxx\node_modules\w-ffmpeg\bin-cache\&lt;sha256>\ffmpeg.exe
+}
+test()
+    .catch((err) => {
+        console.log('catch', err)
+    })</code></pre>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="h5-returns">Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>回傳Promise，resolve回傳執行檔路徑物件，內含fpExe為ffmpeg.exe的絕對路徑字串，reject回傳帶code之Error(E_OFFLINE_MISSING、E_HASH_MISMATCH、E_EXTRACT等)</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Promise</span>
+
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="ensureBins"><span class="type-signature"></span>ensureBins<span class="signature">(opt<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {Promise}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>取得本套件之外部執行檔ffmpeg.exe: 首次使用時下載(或自鏡像取得)切割zip分片，組合、解壓後以bin/manifest.json之SHA-256與大小校驗，之後自快取取得(亦校驗)
+規格: 外部執行檔之存放下載校驗與離線(制式規格)§6; 實作為wsemi之fsEnsureBins, 本套件不另寫下載、快取、鏡像、校驗、組合與解壓
+環境變數: W_BIN_CACHE、W_BIN_MIRROR、W_BIN_OFFLINE, 見README〈外部執行檔〉</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="ensureBins.mjs.html">ensureBins.mjs</a>, <a href="ensureBins.mjs.html#line34">line 34</a>
     </li></ul></dd>
     
 
@@ -668,15 +800,15 @@ test()
 
     <h5 class="h5-examples">Example</h5>
     
-    <pre class="prettyprint"><code>import autoDownloadFiles from 'w-ffmpeg/src/autoDownloadFiles.mjs'
+    <pre class="prettyprint"><code>import ensureBins from 'w-ffmpeg/src/ensureBins.mjs'
 
 async function test() {
 
-    //autoDownloadFiles, 無ffmpeg.exe時自動下載, 下載失敗則reject
-    let { fpExe } = await autoDownloadFiles()
+    //部署前預先取得(連網機器設W_BIN_CACHE=&lt;資料夾>後執行, 該資料夾即可作為離線鏡像W_BIN_MIRROR)
+    let bins = await ensureBins()
 
-    console.log('fpExe', fpExe)
-    // fpExe D:\xxx\node_modules\w-ffmpeg\src\ffmpeg.exe
+    console.log('bins', bins)
+    // bins { 'ffmpeg.exe': 'D:\\xxx\\node_modules\\w-ffmpeg\\bin-cache\\&lt;sha256>\\ffmpeg.exe' }
 }
 test()
     .catch((err) => {
@@ -684,6 +816,76 @@ test()
     })</code></pre>
 
 
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>opt</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    <code>{}</code>
+                
+                </td>
+            
+
+            <td class="description last"><p>輸入設定物件, 交wsemi之fsEnsureBins(names、cacheDir、mirror、offline、onProgress等), pkgRoot固定為本套件根</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
 
 
 
@@ -704,7 +906,7 @@ test()
 
         
 <div class="param-desc">
-    <p>回傳Promise，resolve回傳執行檔路徑物件，內含fpExe為ffmpeg.exe的絕對路徑字串，reject回傳錯誤訊息</p>
+    <p>回傳Promise，resolve回傳{ [檔名]: 絕對路徑 }，reject回傳帶code之Error(E_OFFLINE_MISSING、E_HASH_MISMATCH、E_EXTRACT等)</p>
 </div>
 
 
@@ -746,7 +948,7 @@ test()
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 4.0.5</a> on Wed Oct 28 2026 01:41:57 GMT+0800 (台北標準時間) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 4.0.5</a> on Thu Oct 29 2026 00:04:47 GMT+0800 (台北標準時間) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
 </footer>
 
 <script>prettyPrint();</script>
