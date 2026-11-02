@@ -1,4 +1,5 @@
 node_modules
+test/_tmp
 .agents
 .opencode
 .claude
@@ -9,15 +10,16 @@ tmp
 
 src/ffmpeg.exe
 src/ffmpeg.zip
+src/temp
+/bin-cache/
+
+# 以下為npm包專屬之排除項(自有套件之npm發布範圍 原則3; 其上為.gitignore之完整抄錄)
+# 第1條 外部執行檔之分割壓縮檔不入npm包: 舊路徑src/ffmpeg.zip.001~005保留於repo供舊版相容(外部執行檔規格S2), 新版改由bin/manifest.json取得
 src/ffmpeg.zip.001
 src/ffmpeg.zip.002
 src/ffmpeg.zip.003
 src/ffmpeg.zip.004
 src/ffmpeg.zip.005
-src/temp
-
-# 外部執行檔不入npm包, 只留bin/manifest.json(清單); 快取與測試暫存夾不入包(外部執行檔規格S1、S5)
+# 第1條 外部執行檔不入npm包, 只留bin/manifest.json(清單)(外部執行檔規格S1、S5)
 /bin/*
 !/bin/manifest.json
-/bin-cache/
-/test/_tmp/

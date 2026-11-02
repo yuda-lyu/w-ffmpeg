@@ -137,19 +137,41 @@ describe(`bin/manifest.json`, function() {
         assert.strict.equal(attr.trim().endsWith('binary: set'), true, attr)
     })
 
-    it(`should not pack external executables into the npm package, only bin/manifest.json (S1, S5, T1)`, function() {
-        //先放誘餌檔(缺忽略規則時確定性變紅): 暫存夾與快取夾內各放一個探針檔, 測試平行執行時他檔之暫存檔亦不得影響本案
+    //npm包清單, 測試平行執行時他檔之暫存檔亦不得影響本案(暫存夾與快取夾由.npmignore排除)
+    let packFilesOf = () => {
+        let r = JSON.parse(execSync('npm pack --dry-run --json', { encoding: 'utf8', windowsHide: true, stdio: ['ignore', 'pipe', 'ignore'] }))
+        let info = Array.isArray(r) ? r[0] : Object.values(r)[0] //npm 11以前為陣列, npm 12起為以套件名為鍵之物件
+        return info.files.map((v) => v.path)
+    }
+
+    //規格: 自有套件之npm發布範圍(dspec) 原則2〈套件測試之npm包檢查〉①(2026-11-02使用者裁示A): 「不得入包」只列外部執行檔與壓縮檔, bin/除manifest.json外之檔, CLAUDE*.md, tmp/, test/_tmp/, .env
+    it(`should not pack external executables into the npm package, only bin/manifest.json (S1, S5, T1; npm publish scope principle 2 check 1)`, function() {
+        //先放誘餌檔(缺忽略規則時確定性變紅): 暫存夾與快取夾內各放一個探針檔
         fs.mkdirSync(fdt, { recursive: true })
         fs.writeFileSync(`${fdt}/probe.exe`, 'x')
         fs.mkdirSync(fdDecoy, { recursive: true })
         fs.writeFileSync(`${fdDecoy}/probe.exe`, 'x')
-        let r = JSON.parse(execSync('npm pack --dry-run --json', { encoding: 'utf8', windowsHide: true, stdio: ['ignore', 'pipe', 'ignore'] }))
-        let info = Array.isArray(r) ? r[0] : Object.values(r)[0] //npm 11以前為陣列, npm 12起為以套件名為鍵之物件
-        let fps = info.files.map((v) => v.path)
-        assert.strict.deepStrictEqual(fps.filter((v) => /\.(exe|dll|msi|zip|7z|\d{3})$/i.test(v)), [])
+        let fps = packFilesOf()
+        assert.strict.deepStrictEqual(fps.filter((v) => /\.(exe|dll|node|msi|zip|7z|gz|tgz|\d{3})$/i.test(v)), []) //\d{3}為分割壓縮檔(.001~)
         assert.strict.deepStrictEqual(fps.filter((v) => v.startsWith('bin/') || v.startsWith('bin-cache/')), ['bin/manifest.json'])
         assert.strict.deepStrictEqual(fps.filter((v) => v.startsWith('src/ffmpeg')), []) //舊路徑檔不入包
-        assert.strict.deepStrictEqual(fps.filter((v) => v.startsWith('test/_tmp/') || v.startsWith('sgud/')), [])
+        assert.strict.deepStrictEqual(fps.filter((v) => /(^|\/)CLAUDE[^/]*\.md$/.test(v)), []) //CLAUDE*.md不入版控亦不入包
+        assert.strict.deepStrictEqual(fps.filter((v) => /(^|\/)tmp\//.test(v) || v.startsWith('test/_tmp/')), [])
+        assert.strict.deepStrictEqual(fps.filter((v) => /(^|\/)\.env$/.test(v)), [])
+    })
+
+    //規格: 自有套件之npm發布範圍(dspec) 原則1、原則4: npm包＝git版控之內容, sgud/、test/tools/、src/(執行檔除外)、dist/等一律不排除; 原則2〈套件測試之npm包檢查〉①: 不得斷言sgud/、docs/、test/、toolg/等不在包內
+    it(`should pack the git-tracked assets such as sgud/ and test/tools/ (npm publish scope principles 1, 4)`, function() {
+        let fps = packFilesOf()
+        assert.strict.equal(fps.includes('sgud/state/state.md'), true, 'sgud/state/state.md is not packed')
+        let toolFiles = fs.readdirSync('test/tools').map((v) => `test/tools/${v}`)
+        assert.strict.equal(toolFiles.length > 0, true)
+        for (let fp of toolFiles) {
+            assert.strict.equal(fps.includes(fp), true, `${fp} is not packed`)
+        }
+        for (let fp of ['src/WFfmpeg.mjs', 'src/ensureBins.mjs', 'dist/w-ffmpeg.umd.js', 'bin/manifest.json', 'README.md', 'LICENSE', 'package.json']) {
+            assert.strict.equal(fps.includes(fp), true, `${fp} is not packed`)
+        }
     })
 
 })

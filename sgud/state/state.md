@@ -15,5 +15,6 @@
 - 規則: `sgud/rule/rulebook.md` R-BIN-EXE-01.
 - 測試: `test/unit-binManifest.test.mjs`(M1/M2/M4、T1、T2、清單提交位元組、S2、D1/E2、wsemi 版本、gDistRollup external/globals、主檔匯出形態)、`test/api-ensureBins.test.mjs`(T3~T7、環境變數、O4、預設快取與 cwd 無關、不轉傳 floatingManifestUrl、`autoDownloadFiles` 與 `WFfmpeg` 之全域 fetch 攔截;本機 HTTP 127.0.0.1:8971)、`test/WFfmpeg.test.mjs`.T8 不適用(非主幹模式).
 - 驗證(bin-ffmpeg,2026-10-28 最終碼): 見主控任務 20261028054319 `agent-out/bin-ffmpeg-修正報告.md`(修前紅、修後全套、變異、UMD 重建實跑、`npm pack --dry-run`、`scan-bins`).未經第三方外審(本輪未列外審).
+- npm 包檢查(2026-11-02,pk-ffmpeg):`test/unit-binManifest.test.mjs` 之打包兩案已依 dspec〈自有套件之npm發布範圍〉原則 2〈套件測試之 npm 包檢查〉①②改口徑(不入包只列執行檔/壓縮檔、`bin/` 除清單、`src/ffmpeg*`、`CLAUDE*.md`、`tmp/`、`test/_tmp/`、`.env`;`sgud/`、`test/tools/` 等隨包並以斷言守住;本套件原無大小上限,未新增);`.npmignore` 已改為首段抄 `.gitignore`＋第 1 條排除項加註.包內 68 檔、`sgud/` 3 檔、執行期 `src`+`dist`+`bin` 264,540 位元組.規則: R-BIN-EXE-01 規則 2、2a.
 - 待辦: 主控發布新版(含 `dist` 重建);舊版淘汰後移除 `src/ffmpeg.zip.001`~`.005`(另案);下游 w-dwload-dlp 之測試 `test/unit-ensureDlpExe.test.mjs` 以假檔放在 `node_modules/w-ffmpeg/src/ffmpeg.exe`,升版後依舊路徑查找者須改用 `WFfmpeg.ensureBins()`(由主控連動時通報).
 - 已知限制: 見 R-BIN-EXE-01〈已知限制〉.
