@@ -305,22 +305,61 @@ describe(`ensureBins`, function() {
         assert.strict.equal(fs.readFileSync(fpMirrorPart).equals(flip(fs.readFileSync(parts[1].path))), true)
     })
 
-    it(`should reject offline with E_OFFLINE_MISSING naming the file, sha256, size, the cache path and the mirror paths of the parts when nothing is available (T6, O3, E3)`, async function() {
+    //規格 T6/O3(2026-11-18改)與〈輸入參數之檢測機制〉V20: 訊息只列缺哪個檔(名稱)與準備方法, 不帶sha256、大小、路徑與網址; 這些改放錯誤物件之結構欄位err.missing[](結構欄位屬契約, 不在「訊息」之限)
+    it(`should reject offline with E_OFFLINE_MISSING naming only the file in the message and giving the sha256, size, cache path and the mirror paths of the parts in err.missing[] when nothing is available (T6, O3, E3, V20)`, async function() {
+        //無鏡像(mirror為空字串): mirrorPath為null
         let cacheDir = newDir('cache')
         let err = await catchErr(() => ensureBins({ cacheDir, fetch: fetchBan, mirror: '', offline: true }))
         assert.strict.equal(err && err.code, 'E_OFFLINE_MISSING', err && err.message)
         let cachePath = path.join(cacheDir, sha256, name)
+
+        //訊息: 含缺檔之檔名; 不含sha256(最終檔與各分割)、大小、快取路徑、快取資料夾、各分割之來源網址
         assert.strict.equal(err.message.includes(name), true, err.message)
-        assert.strict.equal(err.message.includes(sha256), true, err.message)
-        assert.strict.equal(err.message.includes(`${size} bytes`), true, err.message)
-        assert.strict.equal(err.message.includes(cachePath), true, err.message)
-        for (let p of parts) {
-            assert.strict.equal(err.message.includes(`<W_BIN_MIRROR>/${pkgName}/${p.sha256}/${nameOf(p)}`), true, err.message)
+        assert.strict.equal(err.message.includes(sha256), false, err.message)
+        assert.strict.equal(err.message.includes(`${size}`), false, err.message)
+        assert.strict.equal(err.message.includes(cachePath), false, err.message)
+        assert.strict.equal(err.message.includes(cacheDir), false, err.message)
+        for (let i = 0; i < parts.length; i++) {
+            assert.strict.equal(err.message.includes(parts[i].sha256), false, err.message)
+            assert.strict.equal(err.message.includes(urlsPinned[i]), false, err.message)
         }
-        assert.strict.deepStrictEqual(err.missing.map((v) => [v.name, v.sha256, v.size, v.cachePath]), [[name, sha256, size, cachePath]])
+
+        //結構欄位err.missing[](原案由訊息驗之資訊: 哪個檔、sha256、大小、應放之快取路徑、各分割之位置): 單一缺檔項, 欄位逐一斷言
+        assert.strict.equal(Array.isArray(err.missing), true)
+        assert.strict.equal(err.missing.length, 1)
+        let m = err.missing[0]
+        assert.strict.deepStrictEqual([m.name, m.sha256, m.size, m.cachePath], [name, sha256, size, cachePath])
+        assert.strict.equal(m.mirrorPath, null) //未設鏡像
+        assert.strict.equal(m.url, null) //來源為分割壓縮檔, 無直接網址
+        assert.strict.equal(m.member, entry.extract.member) //自壓縮檔解出之成員
+        assert.strict.equal(m.archive, null)
+        assert.strict.equal(m.bundle, null) //單一檔非檔案組
+        assert.strict.equal(Array.isArray(m.reasons), true)
+        assert.strict.deepStrictEqual(
+            m.parts.map((p) => [p.name, p.sha256, p.size, p.url, p.mirrorPath]),
+            parts.map((p, i) => [nameOf(p), p.sha256, p.size, urlsPinned[i], null]),
+        )
+
         assert.strict.deepStrictEqual(urls, [])
         assert.strict.equal(hits.length, 0)
         assert.strict.deepStrictEqual(listFiles(cacheDir), [])
+
+        //有鏡像(空資料夾)而離線: 最終檔與各分割之mirrorPath為<鏡像>/<套件>/<sha256>/<name>(原案由訊息驗各分割之鏡像位置); 訊息仍不帶該位置
+        let mirror = newDir('mirror-empty')
+        fs.mkdirSync(mirror, { recursive: true })
+        let cacheDir2 = newDir('cache')
+        let err2 = await catchErr(() => ensureBins({ cacheDir: cacheDir2, fetch: fetchBan, mirror, offline: true }))
+        assert.strict.equal(err2 && err2.code, 'E_OFFLINE_MISSING', err2 && err2.message)
+        assert.strict.equal(err2.message.includes(name), true, err2.message)
+        assert.strict.equal(err2.message.includes(mirror), false, err2.message)
+        assert.strict.equal(err2.message.includes(sha256), false, err2.message)
+        assert.strict.equal(err2.missing.length, 1)
+        let m2 = err2.missing[0]
+        assert.strict.deepStrictEqual([m2.name, m2.sha256, m2.size, m2.cachePath], [name, sha256, size, path.join(cacheDir2, sha256, name)])
+        assert.strict.equal(m2.mirrorPath, path.join(mirror, pkgName, sha256, name))
+        assert.strict.deepStrictEqual(m2.parts.map((p) => p.mirrorPath), parts.map((p) => path.join(mirror, pkgName, p.sha256, nameOf(p))))
+        assert.strict.deepStrictEqual(urls, [])
+        assert.strict.deepStrictEqual(listFiles(cacheDir2), [])
     })
 
     it(`should re-obtain the file when the cached file was altered with the same size (T7, D4)`, async function() {
@@ -365,7 +404,13 @@ describe(`ensureBins`, function() {
             return catchErr(() => ensureBins({ fetch: fetchBan }))
         })
         assert.strict.equal(err && err.code, 'E_OFFLINE_MISSING', err && err.message)
-        assert.strict.equal(err.message.includes(path.join(envRoot2, pkgName, sha256, name)), true, err.message)
+        //O3、V20: 應放之快取位置(<W_BIN_CACHE>/<套件>/<sha256>/<name>)在err.missing[0].cachePath, 訊息只含檔名而不含該路徑
+        assert.strict.equal(err.missing.length, 1)
+        assert.strict.deepStrictEqual([err.missing[0].name, err.missing[0].sha256, err.missing[0].size], [name, sha256, size])
+        assert.strict.equal(err.missing[0].cachePath, path.join(envRoot2, pkgName, sha256, name))
+        assert.strict.equal(err.missing[0].mirrorPath, null) //W_BIN_MIRROR未設
+        assert.strict.equal(err.message.includes(name), true, err.message)
+        assert.strict.equal(err.message.includes(envRoot2), false, err.message)
         assert.strict.deepStrictEqual(urls, [])
     })
 
@@ -480,6 +525,13 @@ describe(`entries without an injectable fetch`, function() {
         let err = await autoDownloadFiles().catch((e) => e)
         assert.strict.equal(err instanceof Error, true)
         assert.strict.equal(err.code, 'E_OFFLINE_MISSING', err.message)
+        //V20: 訊息只含檔名, 應放之位置與sha256在err.missing[](autoDownloadFiles不包裝, 原錯誤物件之結構欄位原樣保留)
+        let cachePath = path.join(fdt, 'cache-b', pkgName, sha256, name)
+        assert.strict.equal(err.message.includes(name), true, err.message)
+        assert.strict.equal(err.message.includes(sha256), false, err.message)
+        assert.strict.equal(err.message.includes(cachePath), false, err.message)
+        assert.strict.equal(err.missing.length, 1)
+        assert.strict.deepStrictEqual([err.missing[0].name, err.missing[0].sha256, err.missing[0].cachePath], [name, sha256, cachePath])
         assert.strict.deepStrictEqual(netCalls, [])
     })
 
@@ -506,7 +558,19 @@ describe(`entries without an injectable fetch`, function() {
         let err = await WFfmpeg(['-version']).catch((e) => e)
         assert.strict.equal(typeof err, 'string') //既有之reject型態為字串
         assert.strict.equal(err.startsWith('[E_OFFLINE_MISSING] '), true, err)
-        assert.strict.equal(err.includes(sha256), true, err)
+
+        //V20: 字串只含檔名與固定之離線準備說明(呼叫ensureBins()讀err.missing[]), 不含sha256、大小、快取路徑
+        let cachePath = path.join(fdt, 'cache-d', pkgName, sha256, name)
+        assert.strict.equal(err, `[E_OFFLINE_MISSING] ${name}: missing from the cache and the mirror while offline; for offline preparation call ensureBins() and read err.missing[] (cachePath, mirrorPath) to get where to put it`)
+        assert.strict.equal(err.includes(sha256), false, err)
+        assert.strict.equal(err.includes(cachePath), false, err)
+        assert.strict.equal(err.includes(path.join(fdt, 'cache-d')), false, err)
+
+        //字串所指引之作法可行(原案由字串驗之sha256與應放位置, 改由其指引之ensureBins()之err.missing[]驗): 同環境呼叫ensureBins()得到帶code與missing之Error
+        let eb = await ensureBins({ names: name }).catch((e) => e)
+        assert.strict.equal(eb instanceof Error, true)
+        assert.strict.equal(eb.code, 'E_OFFLINE_MISSING', eb.message)
+        assert.strict.deepStrictEqual(eb.missing.map((v) => [v.name, v.sha256, v.size, v.cachePath]), [[name, sha256, entry.extract.size, cachePath]])
         assert.strict.deepStrictEqual(netCalls, [])
 
         //既有之輸入檢核訊息不變

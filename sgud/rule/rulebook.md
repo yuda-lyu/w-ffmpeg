@@ -14,7 +14,7 @@
   4. 首次使用時下載(D1);**不得**有 `postinstall`/`install`/`preinstall`(已刪 `scripts/install.mjs` 與 `src/downloadFiles.mjs`;不得再引入 `fsDownloadFile`、`fsMergeFiles`、`w-zip`).
   5. 離線與內網依規格 O1~O5:`W_BIN_CACHE`、`W_BIN_MIRROR`、`W_BIN_OFFLINE` 由 wsemi 統一讀取;README〈外部執行檔〉為對使用者之說明(O5).鏡像可放最終檔 `<鏡像>/w-ffmpeg/<解出檔 sha256>/ffmpeg.exe` 或各分割 `<鏡像>/w-ffmpeg/<分割 sha256>/ffmpeg.zip.00N`.
   6. `ensureBins` 為 `src/ensureBins.mjs` 之預設匯出,並掛於 `WFfmpeg.ensureBins`(主檔 UMD 為 `module.exports = 函數`,不可改為具名匯出,否則破壞 `require('w-ffmpeg')` 之既有用法).
-  7. reject 型態:`WFfmpeg` 既有為字串,維持字串,取不到 `ffmpeg.exe` 時為 `[code] message`;`ensureBins()` 與 `autoDownloadFiles()` reject 帶 `code` 之 Error.
+  7. reject 型態:`WFfmpeg` 既有為字串,維持字串,取不到 `ffmpeg.exe` 時為 `[code] message`,其中離線缺檔(`E_OFFLINE_MISSING`)為 `[code] <檔名>: <固定說明:離線準備請呼叫 ensureBins() 並讀 err.missing[] 取得放置位置>`,不帶路徑與 sha256(〈輸入參數之檢測機制〉V20;字串無 `missing` 欄位,故不轉述 wsemi 之訊息);`ensureBins()` 與 `autoDownloadFiles()` reject 帶 `code` 與 `missing` 之 Error(sha256、大小、`cachePath`、`mirrorPath`、`parts` 等於結構欄位 `err.missing[]`,訊息只列檔名與準備方法).測試:`test/api-ensureBins.test.mjs` T6、環境變數案、`autoDownloadFiles` 案、`WFfmpeg` 字串案.
   8. UMD 建置(`toolg/gDistRollup.mjs`)須把 `url`、`crypto`、`stream`、`stream/promises` 列為 external 與 globals;套件根以 `import.meta.url` 推得,rollup 於 UMD 輸出會換為 `__filename` 之 file URL,故 `dist/` 與 `src/` 皆須位於套件根之下一層.
   9. 本套件無執行期資料交換檔(ffmpeg 以命令列參數與 stdout/stderr 溝通),故無「交換檔不寫執行檔所在夾」之站點.
 - 盤點指令: Grep `src/` 搜 `fsDownloadFile|fsMergeFiles|w-zip|fetch\(|raw/refs/heads|github\.com`(應無命中);`node C:/opensrcOper/tools/scan-bins.mjs --only w-ffmpeg`(應為 OK);`npm pack --dry-run`(`bin/` 下只見 `bin/manifest.json`,`sgud/` 3 檔隨包).

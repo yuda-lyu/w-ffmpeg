@@ -2,6 +2,10 @@
 
 本檔為執行工作時特有之累積經驗,留給後續之嘗試、執行與判斷,由agent自行編列、擴充與維護.過長時抽出舊者為`experience_<年月日>.md`,並於本檔註明何時抽出.
 
+## 離線缺檔訊息改結構欄位(eb1,2026-11-18)
+
+- **訊息不帶值後測試改驗結構欄位**:wsemi 1.9.64 起 `E_OFFLINE_MISSING` 訊息只列檔名,原斷言訊息含 sha256/路徑之案改驗 `err.missing[]`(最終檔 `name/sha256/size/cachePath/mirrorPath`、`parts[]` 逐項、`bundle` 為 null),並另以空鏡像資料夾案驗 `mirrorPath`(未設鏡像時為 null,單一 T6 案驗不到鏡像位置);`WFfmpeg` 之字串 reject 不能轉述 wsemi 訊息(其提及「this error 之 missing 欄位」,字串沒有),改為檔名＋固定說明,測試以全文相等守住並實跑字串所指引之 `ensureBins()` 驗放置位置;變異(包裝改回 `[code] message`)使字串案確定性轉紅.
+
 ## 外部執行檔改造(bin-ffmpeg,2026-10-28)
 
 - **分割壓縮檔的三層雜湊**:清單項為 `parts`(各分割)＋`assembled`(組合後 zip)＋`extract`(解出之 `ffmpeg.exe`).本套件之 zip 為「存放」不壓縮(組合後 122,687,642 位元組,解出 122,687,488 位元組),所以 wsemi 取得一次(下載 5 分割→雜湊→組合→雜湊→`tar.exe` 解壓→雜湊→原子移入)在本機鏡像上約 1.2 秒,不必擔心測試耗時;第二次命中快取只重新雜湊 122 MB 約 0.2 秒.
